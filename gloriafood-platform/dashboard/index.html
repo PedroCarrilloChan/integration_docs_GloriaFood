@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GloriaFood Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div x-data="dashboard()" x-init="init()" class="min-h-screen">
+    <!-- Sidebar -->
+    <aside class="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white">
+      <div class="p-6">
+        <h1 class="text-xl font-bold">GloriaFood</h1>
+        <p class="text-gray-400 text-sm">Dashboard</p>
+      </div>
+
+      <nav class="mt-6">
+        <a @click="currentView = 'dashboard'" :class="{'bg-gray-800': currentView === 'dashboard'}"
+           class="flex items-center px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a @click="currentView = 'orders'; loadOrders()" :class="{'bg-gray-800': currentView === 'orders'}"
+           class="flex items-center px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          Pedidos
+        </a>
+
+        <a @click="currentView = 'clients'; loadClients()" :class="{'bg-gray-800': currentView === 'clients'}"
+           class="flex items-center px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+          </svg>
+          Clientes
+        </a>
+
+        <a @click="currentView = 'menu'; loadMenu()" :class="{'bg-gray-800': currentView === 'menu'}"
+           class="flex items-center px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          Menú
+        </a>
+
+        <a @click="currentView = 'stats'" :class="{'bg-gray-800': currentView === 'stats'}"
+           class="flex items-center px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors">
+          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Estadísticas
+        </a>
+      </nav>
+
+      <div class="absolute bottom-0 left-0 right-0 p-6">
+        <div class="bg-gray-800 rounded-lg p-4">
+          <p class="text-sm text-gray-400">API Status</p>
+          <p class="text-green-400 font-medium flex items-center">
+            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+            Conectado
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800" x-text="viewTitles[currentView]"></h2>
+          <p class="text-gray-500" x-text="new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })"></p>
+        </div>
+        <div class="flex gap-4">
+          <button @click="syncMenu()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Sincronizar Menú
+          </button>
+          <button @click="pollOrders()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+            </svg>
+            Poll Pedidos
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div x-show="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+
+      <!-- Dashboard View -->
+      <div x-show="currentView === 'dashboard'" x-cloak>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Pedidos Hoy</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.today?.orders || 0"></p>
+              </div>
+              <div class="bg-blue-100 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Ingresos Hoy</p>
+                <p class="text-3xl font-bold text-gray-800">$<span x-text="(stats.today?.revenue || 0).toFixed(2)"></span></p>
+              </div>
+              <div class="bg-green-100 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Pedidos Semana</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.week?.orders || 0"></p>
+              </div>
+              <div class="bg-purple-100 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Ticket Promedio</p>
+                <p class="text-3xl font-bold text-gray-800">$<span x-text="(stats.today?.avgOrderValue || 0).toFixed(2)"></span></p>
+              </div>
+              <div class="bg-orange-100 p-3 rounded-lg">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders by Type -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pedidos por Tipo (Mes)</h3>
+            <div class="flex items-center gap-8">
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-gray-600">Delivery</span>
+                  <span class="font-semibold" x-text="stats.ordersByType?.delivery || 0"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-blue-600 h-3 rounded-full" :style="'width: ' + getDeliveryPercent() + '%'"></div>
+                </div>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-gray-600">Pickup</span>
+                  <span class="font-semibold" x-text="stats.ordersByType?.pickup || 0"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-green-600 h-3 rounded-full" :style="'width: ' + getPickupPercent() + '%'"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Mejores Clientes</h3>
+            <div class="space-y-3">
+              <template x-for="client in stats.topClients || []" :key="client.id">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div class="flex items-center">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span class="text-blue-600 font-semibold" x-text="(client.first_name || 'C')[0]"></span>
+                    </div>
+                    <div>
+                      <p class="font-medium text-gray-800" x-text="(client.first_name || '') + ' ' + (client.last_name || '')"></p>
+                      <p class="text-sm text-gray-500" x-text="client.total_orders + ' pedidos'"></p>
+                    </div>
+                  </div>
+                  <p class="font-semibold text-gray-800">$<span x-text="(client.total_spent || 0).toFixed(2)"></span></p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="bg-white rounded-xl shadow-sm">
+          <div class="p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800">Pedidos Recientes</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <template x-for="order in stats.recentOrders || []" :key="order.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="'#' + order.id"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="(order.client_first_name || '') + ' ' + (order.client_last_name || '')"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span :class="order.type === 'delivery' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                            class="px-2 py-1 text-xs font-medium rounded-full" x-text="order.type"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">$<span x-text="order.total_price.toFixed(2)"></span></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800" x-text="order.status"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(order.created_at)"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders View -->
+      <div x-show="currentView === 'orders'" x-cloak>
+        <div class="bg-white rounded-xl shadow-sm">
+          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-800">Todos los Pedidos</h3>
+            <div class="flex gap-4">
+              <select @change="ordersFilter.type = $event.target.value; loadOrders()" class="border rounded-lg px-3 py-2 text-sm">
+                <option value="">Todos los tipos</option>
+                <option value="delivery">Delivery</option>
+                <option value="pickup">Pickup</option>
+              </select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GloriaFood ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregar</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <template x-for="order in orders" :key="order.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="'#' + order.id"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="order.gloriafood_id"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span :class="order.type === 'delivery' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'"
+                            class="px-2 py-1 text-xs font-medium rounded-full" x-text="order.type"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">$<span x-text="order.total_price.toFixed(2)"></span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="order.payment_method || '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800" x-text="order.status"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="order.fulfill_at ? formatDate(order.fulfill_at) : '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <button @click="viewOrder(order.id)" class="text-blue-600 hover:text-blue-800">Ver</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="p-4 border-t border-gray-100 flex justify-between items-center">
+            <p class="text-sm text-gray-500">Mostrando <span x-text="orders.length"></span> de <span x-text="ordersPagination.total"></span> pedidos</p>
+            <div class="flex gap-2">
+              <button @click="ordersPagination.page--; loadOrders()" :disabled="ordersPagination.page <= 1"
+                      class="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
+              <button @click="ordersPagination.page++; loadOrders()" :disabled="ordersPagination.page >= ordersPagination.totalPages"
+                      class="px-3 py-1 border rounded disabled:opacity-50">Siguiente</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clients View -->
+      <div x-show="currentView === 'clients'" x-cloak>
+        <div class="bg-white rounded-xl shadow-sm">
+          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-800">Clientes</h3>
+            <input type="text" x-model="clientSearch" @input.debounce.300ms="loadClients()"
+                   placeholder="Buscar clientes..." class="border rounded-lg px-4 py-2 text-sm w-64">
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pedidos</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marketing</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <template x-for="client in clients" :key="client.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span class="text-blue-600 font-semibold" x-text="(client.first_name || 'C')[0]"></span>
+                        </div>
+                        <span class="font-medium text-gray-800" x-text="(client.first_name || '') + ' ' + (client.last_name || '')"></span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="client.email || '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="client.phone || '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium" x-text="client.order_count"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span :class="client.marketing_consent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                            class="px-2 py-1 text-xs font-medium rounded-full" x-text="client.marketing_consent ? 'Sí' : 'No'"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <button @click="viewClient(client.id)" class="text-blue-600 hover:text-blue-800">Ver</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu View -->
+      <div x-show="currentView === 'menu'" x-cloak>
+        <div class="bg-white rounded-xl shadow-sm">
+          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-800">Menú</h3>
+            <div class="flex gap-4">
+              <input type="text" x-model="menuSearch" @input.debounce.300ms="searchMenuItems()"
+                     placeholder="Buscar productos..." class="border rounded-lg px-4 py-2 text-sm w-64">
+              <button @click="syncMenu()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                Sincronizar
+              </button>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <template x-if="menu">
+              <div class="space-y-6">
+                <template x-for="category in menu.categories || []" :key="category.id">
+                  <div class="border rounded-lg">
+                    <div class="bg-gray-50 p-4 font-semibold text-gray-800 border-b" x-text="category.name"></div>
+                    <div class="divide-y">
+                      <template x-for="item in category.items || []" :key="item.id">
+                        <div class="p-4 flex justify-between items-center">
+                          <div>
+                            <p class="font-medium text-gray-800" x-text="item.name"></p>
+                            <p class="text-sm text-gray-500" x-text="item.description || ''"></p>
+                            <div class="flex gap-2 mt-2">
+                              <template x-for="tag in item.tags || []" :key="tag">
+                                <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded" x-text="tag"></span>
+                              </template>
+                            </div>
+                          </div>
+                          <p class="font-semibold text-gray-800">$<span x-text="item.price.toFixed(2)"></span></p>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template x-if="!menu">
+              <div class="text-center py-12">
+                <p class="text-gray-500">No hay menú sincronizado. Haz clic en "Sincronizar" para obtener el menú.</p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats View -->
+      <div x-show="currentView === 'stats'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Productos Más Vendidos</h3>
+            <div class="space-y-3">
+              <template x-for="product in topProducts" :key="product.name">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p class="font-medium text-gray-800" x-text="product.name"></p>
+                    <p class="text-sm text-gray-500" x-text="product.total_quantity + ' vendidos'"></p>
+                  </div>
+                  <p class="font-semibold text-gray-800">$<span x-text="(product.total_revenue || 0).toFixed(2)"></span></p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Métodos de Pago</h3>
+            <div class="space-y-3">
+              <template x-for="payment in paymentStats" :key="payment.payment_method">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p class="font-medium text-gray-800" x-text="payment.payment_method || 'Sin definir'"></p>
+                    <p class="text-sm text-gray-500" x-text="payment.count + ' pedidos'"></p>
+                  </div>
+                  <p class="font-semibold text-gray-800">$<span x-text="(payment.total || 0).toFixed(2)"></span></p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Detail Modal -->
+      <div x-show="showOrderModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
+          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-gray-800">Pedido #<span x-text="selectedOrder?.order?.id"></span></h3>
+            <button @click="showOrderModal = false" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="p-6" x-show="selectedOrder">
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p class="text-sm text-gray-500">Tipo</p>
+                <p class="font-medium" x-text="selectedOrder?.order?.type"></p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Estado</p>
+                <p class="font-medium" x-text="selectedOrder?.order?.status"></p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Método de Pago</p>
+                <p class="font-medium" x-text="selectedOrder?.order?.payment_method || '-'"></p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Total</p>
+                <p class="font-medium">$<span x-text="selectedOrder?.order?.total_price?.toFixed(2)"></span></p>
+              </div>
+            </div>
+
+            <template x-if="selectedOrder?.client">
+              <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">Cliente</h4>
+                <p x-text="(selectedOrder.client.first_name || '') + ' ' + (selectedOrder.client.last_name || '')"></p>
+                <p class="text-sm text-gray-500" x-text="selectedOrder.client.email"></p>
+                <p class="text-sm text-gray-500" x-text="selectedOrder.client.phone"></p>
+              </div>
+            </template>
+
+            <div class="mb-6">
+              <h4 class="font-medium text-gray-800 mb-2">Items</h4>
+              <div class="border rounded-lg divide-y">
+                <template x-for="item in selectedOrder?.items || []" :key="item.id">
+                  <div class="p-3 flex justify-between">
+                    <div>
+                      <p class="font-medium" x-text="item.quantity + 'x ' + item.name"></p>
+                      <p class="text-sm text-gray-500" x-text="item.instructions || ''"></p>
+                    </div>
+                    <p class="font-medium">$<span x-text="item.total_price?.toFixed(2)"></span></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function dashboard() {
+      return {
+        // Config
+        apiUrl: '', // Se configura automáticamente o manualmente
+        apiToken: '', // Token de autenticación
+
+        // State
+        currentView: 'dashboard',
+        loading: false,
+
+        // Data
+        stats: {},
+        orders: [],
+        clients: [],
+        menu: null,
+        topProducts: [],
+        paymentStats: [],
+
+        // Pagination
+        ordersPagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        clientsPagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+
+        // Filters
+        ordersFilter: { type: '', status: '' },
+        clientSearch: '',
+        menuSearch: '',
+
+        // Modals
+        showOrderModal: false,
+        selectedOrder: null,
+
+        // View titles
+        viewTitles: {
+          dashboard: 'Dashboard',
+          orders: 'Pedidos',
+          clients: 'Clientes',
+          menu: 'Menú',
+          stats: 'Estadísticas'
+        },
+
+        async init() {
+          // Configurar API URL (ajustar según tu despliegue)
+          this.apiUrl = localStorage.getItem('apiUrl') || window.location.origin;
+          this.apiToken = localStorage.getItem('apiToken') || prompt('Ingresa tu API Token:');
+
+          if (this.apiToken) {
+            localStorage.setItem('apiToken', this.apiToken);
+          }
+
+          await this.loadDashboard();
+        },
+
+        async api(endpoint, method = 'GET', body = null) {
+          this.loading = true;
+          try {
+            const options = {
+              method,
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiToken}`
+              }
+            };
+            if (body) options.body = JSON.stringify(body);
+
+            const response = await fetch(`${this.apiUrl}${endpoint}`, options);
+            const data = await response.json();
+
+            if (!data.success) {
+              console.error('API Error:', data.error);
+              alert('Error: ' + data.error);
+              return null;
+            }
+            return data;
+          } catch (error) {
+            console.error('Request failed:', error);
+            alert('Error de conexión');
+            return null;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadDashboard() {
+          const data = await this.api('/api/stats/dashboard');
+          if (data) {
+            this.stats = data.data;
+          }
+
+          // Load additional stats
+          const products = await this.api('/api/stats/products/top?limit=5');
+          if (products) this.topProducts = products.data;
+
+          const payments = await this.api('/api/stats/payments');
+          if (payments) this.paymentStats = payments.data;
+        },
+
+        async loadOrders() {
+          const params = new URLSearchParams({
+            page: this.ordersPagination.page,
+            limit: this.ordersPagination.limit
+          });
+          if (this.ordersFilter.type) params.append('type', this.ordersFilter.type);
+
+          const data = await this.api(`/api/orders?${params}`);
+          if (data) {
+            this.orders = data.data;
+            this.ordersPagination = data.pagination;
+          }
+        },
+
+        async loadClients() {
+          const params = new URLSearchParams({
+            page: this.clientsPagination.page,
+            limit: this.clientsPagination.limit
+          });
+          if (this.clientSearch) params.append('search', this.clientSearch);
+
+          const data = await this.api(`/api/clients?${params}`);
+          if (data) {
+            this.clients = data.data;
+            this.clientsPagination = data.pagination;
+          }
+        },
+
+        async loadMenu() {
+          const data = await this.api('/api/menu');
+          if (data) {
+            this.menu = data.data;
+          }
+        },
+
+        async syncMenu() {
+          const data = await this.api('/api/menu/sync', 'POST');
+          if (data) {
+            alert('Menú sincronizado correctamente');
+            await this.loadMenu();
+          }
+        },
+
+        async pollOrders() {
+          const data = await this.api('/api/orders/poll', 'POST');
+          if (data) {
+            alert(`Se procesaron ${data.data.length} pedidos`);
+            await this.loadDashboard();
+            if (this.currentView === 'orders') await this.loadOrders();
+          }
+        },
+
+        async viewOrder(id) {
+          const data = await this.api(`/api/orders/${id}`);
+          if (data) {
+            this.selectedOrder = data.data;
+            this.showOrderModal = true;
+          }
+        },
+
+        async viewClient(id) {
+          const data = await this.api(`/api/clients/${id}`);
+          if (data) {
+            alert(JSON.stringify(data.data, null, 2));
+          }
+        },
+
+        async searchMenuItems() {
+          if (this.menuSearch.length < 2) {
+            await this.loadMenu();
+            return;
+          }
+          const data = await this.api(`/api/menu/search?q=${encodeURIComponent(this.menuSearch)}`);
+          if (data) {
+            // Show search results as a single category
+            this.menu = {
+              categories: [{
+                name: `Resultados para "${this.menuSearch}"`,
+                items: data.data
+              }]
+            };
+          }
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '-';
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        },
+
+        getDeliveryPercent() {
+          const total = (this.stats.ordersByType?.delivery || 0) + (this.stats.ordersByType?.pickup || 0);
+          if (total === 0) return 0;
+          return ((this.stats.ordersByType?.delivery || 0) / total * 100).toFixed(0);
+        },
+
+        getPickupPercent() {
+          const total = (this.stats.ordersByType?.delivery || 0) + (this.stats.ordersByType?.pickup || 0);
+          if (total === 0) return 0;
+          return ((this.stats.ordersByType?.pickup || 0) / total * 100).toFixed(0);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+name = "gloriafood-platform"
+main = "src/index.ts"
+compatibility_date = "2024-02-08"
+
+# Variables de entorno (configurar en Cloudflare Dashboard o con secrets)
+[vars]
+GLORIAFOOD_API_URL = "https://pos.globalfoodsoft.com"
+API_VERSION = "2"
+
+# Base de datos D1
+[[d1_databases]]
+binding = "DB"
+database_name = "gloriafood-db"
+database_id = "YOUR_DATABASE_ID" # Reemplazar después de crear con: wrangler d1 create gloriafood-db
+
+# KV Namespace para caché
+[[kv_namespaces]]
+binding = "CACHE"
+id = "YOUR_KV_ID" # Reemplazar después de crear con: wrangler kv:namespace create CACHE
+
+# Secrets necesarios (configurar con wrangler secret put):
+# - GLORIAFOOD_SECRET_KEY: Clave de autenticación del restaurante
+# - GLORIAFOOD_MASTER_KEY: Master key para validar webhooks
+# - API_AUTH_TOKEN: Token para proteger tu API
+
+[triggers]
+# Cron para sincronización automática del menú (cada 6 horas)
+crons = ["0 */6 * * *"]
