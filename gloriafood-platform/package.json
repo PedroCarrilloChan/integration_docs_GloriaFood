@@ -1,0 +1,21 @@
+{
+  "name": "gloriafood-platform",
+  "version": "1.0.0",
+  "description": "Plataforma de integración con GloriaFood API usando Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute gloriafood-db --local --file=./schema/migrations.sql",
+    "db:migrate:prod": "wrangler d1 execute gloriafood-db --file=./schema/migrations.sql",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "hono": "^4.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.28.0"
+  }
+}
