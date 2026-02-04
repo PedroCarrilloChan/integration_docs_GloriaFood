@@ -59,6 +59,44 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Debug endpoint para verificar configuración
+app.get('/debug', async (c) => {
+  const env = c.env;
+  let dbStatus = 'unknown';
+  let kvStatus = 'unknown';
+
+  // Verificar D1
+  try {
+    await env.DB.prepare('SELECT 1').first();
+    dbStatus = 'connected';
+  } catch (e) {
+    dbStatus = `error: ${e instanceof Error ? e.message : 'unknown'}`;
+  }
+
+  // Verificar KV
+  try {
+    await env.CACHE.put('test', 'ok');
+    const val = await env.CACHE.get('test');
+    kvStatus = val === 'ok' ? 'connected' : 'read error';
+  } catch (e) {
+    kvStatus = `error: ${e instanceof Error ? e.message : 'unknown'}`;
+  }
+
+  return c.json({
+    version: '1.0.1',
+    deployed_at: new Date().toISOString(),
+    bindings: {
+      DB: dbStatus,
+      CACHE: kvStatus,
+      GLORIAFOOD_API_URL: env.GLORIAFOOD_API_URL || 'not set',
+      API_VERSION: env.API_VERSION || 'not set',
+      has_secret_key: !!env.GLORIAFOOD_SECRET_KEY,
+      has_master_key: !!env.GLORIAFOOD_MASTER_KEY,
+      has_auth_token: !!env.API_AUTH_TOKEN
+    }
+  });
+});
+
 // =====================================================
 // WEBHOOK - Recepción de pedidos de GloriaFood (PUSH)
 // =====================================================
